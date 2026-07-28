@@ -32,7 +32,6 @@ android {
     kotlinOptions {
         jvmTarget=11
     }
-    buildToolsVersion '30.0.3'
 }
 
 android {
@@ -65,7 +64,6 @@ dependencies {
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.github.bumptech.glide:glide:4.15.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.15.0'
-    implementation 'com.michalsvec:single-row-calednar:1.0.0'
     implementation "androidx.core:core-splashscreen:1.0.1"
     implementation 'com.facebook.shimmer:shimmer:0.5.0'
     implementation 'androidx.browser:browser:1.5.0'
