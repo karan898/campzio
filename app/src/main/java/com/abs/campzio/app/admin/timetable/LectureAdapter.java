@@ -1,0 +1,64 @@
+package com.abs.campzio.app.admin.timetable;
+
+import android.content.Context;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.abs.campzio.app.R;
+
+import java.util.List;
+
+public class LectureAdapter extends RecyclerView.Adapter<LectureAdapter.LectureViewAdapter>{
+    Context mContext;
+    List<Lecture> mData;
+
+    public LectureAdapter(Context mcontext, List<Lecture>mData) {
+        this.mContext=mcontext;
+        this.mData=mData;
+    }
+
+    @NonNull
+    @Override
+    public LectureViewAdapter onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view;
+        view= LayoutInflater.from(mContext).inflate(R.layout.lecture_item,parent, false);
+        return new LectureViewAdapter(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull LectureViewAdapter holder, int position) {
+
+        Lecture item = mData.get(position);
+        holder.hourOfDay.setText(item.getHourOfDay());
+        holder.minute.setText(item.getMinute());
+        holder.subject.setText(item.getSubject());
+        holder.teacher.setText(item.getTeacher());
+        holder.roomNumber.setText(item.getRoomNumber());
+    }
+
+    @Override
+    public int getItemCount() {
+        return mData.size();
+    }
+
+
+    public class LectureViewAdapter extends RecyclerView.ViewHolder {
+
+        private TextView hourOfDay, minute, subject, teacher, roomNumber;
+
+        public LectureViewAdapter(@NonNull View itemView) {
+            super(itemView);
+            hourOfDay = itemView.findViewById(R.id.adminHourOfDay);
+            minute = itemView.findViewById(R.id.adminMinute);
+            subject = itemView.findViewById(R.id.adminSubjectNameTv);
+            teacher = itemView.findViewById(R.id.adminTeacherNameTv);
+            roomNumber = itemView.findViewById(R.id.adminRoomNumberTv);
+        }
+    }
+}
+

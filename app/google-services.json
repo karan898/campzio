@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "691575000349",
+    "firebase_url": "https://campzio-abs-default-rtdb.firebaseio.com",
+    "project_id": "campzio-abs",
+    "storage_bucket": "campzio-abs.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:691575000349:android:8a19c80e8bd6b9bcd5a5f4",
+        "android_client_info": {
+          "package_name": "com.abs.campzio.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "691575000349-br81hptbtjh0onvga8c785dquesm1tjj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.abs.campzio.app",
+            "certificate_hash": "83823dcf5a5a0c7cd549b47dce283ffa0fa30e50"
+          }
+        },
+        {
+          "client_id": "691575000349-rk4qptc0p14hau3q972felbcfe55vc21.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCRRgrhLSusd2oaHFd-4BR9cdywkSnNhgo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "691575000349-rk4qptc0p14hau3q972felbcfe55vc21.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,51 @@
+*.iml
+
+# Gradle
+.gradle/
+
+# Local configuration
+local.properties
+
+# Build files
+/build/
+/app/build/
+
+# Android Studio
+.idea/
+*.iml
+
+# APK / AAB
+*.apk
+*.ap_
+*.aab
+
+# Generated files
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keystore files
+*.jks
+*.keystore
+
+# Firebase Admin SDK
+service-account.json
+firebase-adminsdk*.json
+
+# Environment files
+.env
+.env.*
+
+# Kotlin
+.kotlin/
+
+# Misc
+out/
+bin/
