@@ -1,12 +1,11 @@
 plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
-    id 'org.jetbrains.kotlin.android'
 }
 
 android {
     namespace 'com.abs.campzio.app'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.abs.campzio.app"
@@ -29,15 +28,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget=11
-    }
-}
-
-android {
     buildFeatures {
         viewBinding = true
-        dataBinding = true
+        dataBinding = false
+        buildConfig = true
+        resValues = true
     }
 }
 

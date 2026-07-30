@@ -132,112 +132,74 @@ public class Register extends AppCompatActivity {
                         mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                             @Override
                             public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()){
-                                    PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationID, code);
-                                    FirebaseUser mAuthCurrentUser =mAuth.getCurrentUser();
-                                    mAuthCurrentUser.updatePhoneNumber(credential);
-                                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                            .setDisplayName(name)
-                                            .build();
-                                    mAuthCurrentUser.updateProfile(profileUpdates)
-                                            .addOnCompleteListener(task1 -> {
+                                if (task.isSuccessful()) {
+                                    FirebaseUser mAuthCurrentUser = mAuth.getCurrentUser();
+                                    if (mAuthCurrentUser != null) {
+                                        // Update display name
+                                        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                                .setDisplayName(name)
+                                                .build();
+                                        mAuthCurrentUser.updateProfile(profileUpdates);
 
-                                            });
-                                    AuthCredential emailCredential = EmailAuthProvider.getCredential(email, password);
-                                    mAuthCurrentUser.reauthenticate(emailCredential).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            if (task.isSuccessful()){
-                                                sessionManager.setLoggedIn(true);
-                                                userRef.addValueEventListener(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                        role = dataSnapshot.child(phone).child("role").getValue(String.class);
-                                                        if (role != null) {
-                                                            if (role.equals("admin")) {
-                                                                // User is an admin
-                                                                // Do something
-
-                                                                if (!mAuthCurrentUser.isEmailVerified()) {
-                                                                    mAuthCurrentUser.sendEmailVerification();
-
-                                                                    sessionManager.setAccountRoleAdmin(true);
-                                                                    Toast.makeText(Register.this, "Admin Registered Successfully", Toast.LENGTH_LONG).show();
-                                                                    Toast.makeText(Register.this, "Verification email sent, please verify your email", Toast.LENGTH_LONG).show();
-                                                                    Intent intent = new Intent(Register.this, AdminMainActivity.class);
-                                                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                                    startActivity(intent);
-                                                                    finish();
-                                                                }else {
-                                                                    sessionManager.setAccountRoleAdmin(true);
-                                                                    Intent intent = new Intent(Register.this, AdminMainActivity.class);
-                                                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                                    startActivity(intent);
-                                                                    finish();
-                                                                }
-
-                                                            } else if (role.equals("user")) {
-                                                                // User is a regular user
-                                                                // Do something else
-                                                                if (!mAuthCurrentUser.isEmailVerified()) {
-                                                                    mAuthCurrentUser.sendEmailVerification();
-                                                                    sessionManager.setAccountRoleUser(true);
-                                                                    Toast.makeText(Register.this, "Student Registered Successfully", Toast.LENGTH_LONG).show();
-                                                                    Toast.makeText(Register.this, "Verification email sent, please verify your email", Toast.LENGTH_LONG).show();
-                                                                    Intent intent = new Intent(Register.this, UserMainActivity.class);
-                                                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                                    startActivity(intent);
-                                                                    finish();
-                                                                }else {
-                                                                    sessionManager.setAccountRoleUser(true);
-                                                                    Intent intent = new Intent(Register.this, UserMainActivity.class);
-                                                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                                    startActivity(intent);
-                                                                    finish();
-                                                                }
-                                                            } else {
-                                                                // Role is not recognized
-                                                                // Handle the error appropriately
-                                                                mAuth.signOut();
-                                                                sessionManager.clearSession();
-                                                                Toast.makeText(Register.this, "Unable to login", Toast.LENGTH_LONG).show();
-                                                                Intent intent = new Intent(Register.this, Login.class);
-                                                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                                startActivity(intent);
-                                                                finish();
-                                                            }
+                                        // Fetch role and complete registration
+                                        userRef.child(phone).addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                role = dataSnapshot.child("role").getValue(String.class);
+                                                if (role != null) {
+                                                    sessionManager.setLoggedIn(true);
+                                                    if (role.equals("admin")) {
+                                                        sessionManager.setAccountRoleAdmin(true);
+                                                        if (!mAuthCurrentUser.isEmailVerified()) {
+                                                            mAuthCurrentUser.sendEmailVerification();
+                                                            Toast.makeText(Register.this, "Admin Registered Successfully. Verification email sent.", Toast.LENGTH_LONG).show();
                                                         }
+                                                        Intent intent = new Intent(Register.this, AdminMainActivity.class);
+                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                        startActivity(intent);
+                                                        finish();
+                                                    } else if (role.equals("user")) {
+                                                        sessionManager.setAccountRoleUser(true);
+                                                        if (!mAuthCurrentUser.isEmailVerified()) {
+                                                            mAuthCurrentUser.sendEmailVerification();
+                                                            Toast.makeText(Register.this, "Student Registered Successfully. Verification email sent.", Toast.LENGTH_LONG).show();
+                                                        }
+                                                        Intent intent = new Intent(Register.this, UserMainActivity.class);
+                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                        startActivity(intent);
+                                                        finish();
+                                                    } else {
+                                                        mAuth.signOut();
+                                                        sessionManager.clearSession();
+                                                        Toast.makeText(Register.this, "Unable to identify role", Toast.LENGTH_LONG).show();
+                                                        Intent intent = new Intent(Register.this, Login.class);
+                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                        startActivity(intent);
+                                                        finish();
                                                     }
-
-                                                    @Override
-                                                    public void onCancelled(DatabaseError databaseError) {
-                                                        // Handle the error appropriately
-                                                        Toast.makeText(Register.this, "Unable to create user", Toast.LENGTH_SHORT).show();
-                                                    }
-                                                });
+                                                }
                                             }
-                                        }
-                                    }).addOnFailureListener(new OnFailureListener() {
-                                        @Override
-                                        public void onFailure(@NonNull Exception e) {
-                                            Toast.makeText(Register.this, "Authentication Failed, Please try logging in again", Toast.LENGTH_SHORT).show();
-                                            Intent intent = new Intent(Register.this, Login.class);
-                                            startActivity(intent);
-                                            finish();
-                                        }
-                                    });
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+                                                registerProgressBar.setVisibility(View.GONE);
+                                                registerUserBtn.setVisibility(View.VISIBLE);
+                                                Toast.makeText(Register.this, "Database error: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                    }
                                 } else {
+                                    registerProgressBar.setVisibility(View.GONE);
+                                    registerUserBtn.setVisibility(View.VISIBLE);
                                     try {
                                         throw task.getException();
-                                    }catch (FirebaseAuthUserCollisionException e){
-                                        registerProgressBar.setVisibility(View.GONE);
-                                        registerUserBtn.setVisibility(View.VISIBLE);
+                                    } catch (FirebaseAuthUserCollisionException e) {
                                         Toast.makeText(Register.this, "User already registered", Toast.LENGTH_SHORT).show();
                                         Intent intent = new Intent(Register.this, Login.class);
-                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                                         startActivity(intent);
                                         finish();
-                                    }catch (Exception e) {
+                                    } catch (Exception e) {
                                         Log.e(TAG, e.getMessage());
                                         Toast.makeText(Register.this, e.getMessage(), Toast.LENGTH_SHORT).show();
                                     }

@@ -24,6 +24,7 @@ import com.abs.campzio.app.admin.AdminMainActivity;
 import com.abs.campzio.app.auth.signin.Login;
 import com.abs.campzio.app.student.UserMainActivity;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -49,37 +50,36 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         SessionManager sessionManager=new SessionManager(this);
-        if (sessionManager.isLoggedIn()) {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        if (sessionManager.isLoggedIn() && currentUser != null) {
             // User is logged in, proceed with the app's main functionality
-            FirebaseAuth mAuthOnStart = FirebaseAuth.getInstance();
-            if (mAuthOnStart.getCurrentUser() != null) {
-                if (sessionManager.isAccountAdmin()){
-                    Intent intent = new Intent(MainActivity.this, AdminMainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                    finish();
-                }else if(sessionManager.isAccountUser()){
-                    Intent intent = new Intent(MainActivity.this, UserMainActivity.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                    finish();
-                }
-            }else {
-                sessionManager.clearSession();
-                Intent intent = new Intent(MainActivity.this, Login.class);
+            if (sessionManager.isAccountAdmin()){
+                Intent intent = new Intent(MainActivity.this, AdminMainActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
                 finish();
+            } else if(sessionManager.isAccountUser()){
+                Intent intent = new Intent(MainActivity.this, UserMainActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish();
+            } else {
+                // Logged in but no role? Go to login
+                sessionManager.clearSession();
+                redirectToLogin();
             }
         } else {
-            // User is not logged in, redirect to the login screen
+            // User is not logged in or session is stale
             sessionManager.clearSession();
-            Intent intent = new Intent(MainActivity.this, Login.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            finish();
+            redirectToLogin();
         }
+    }
 
-
+    private void redirectToLogin() {
+        Intent intent = new Intent(MainActivity.this, Login.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
     }
 }

@@ -106,36 +106,28 @@ public class AdminMainActivity extends AppCompatActivity implements View.OnClick
     @Override
     public void onClick(View view) {
         Intent intent;
-        switch (view.getId()){
-            case R.id.addEvent:
-                intent = new Intent(AdminMainActivity.this, Events.class);
-                startActivity(intent);
-                break;
-            case R.id.addFile:
-                intent =new Intent(AdminMainActivity.this, Files.class);
-                startActivity(intent);
-                break;
-            case R.id.addContact:
-                intent =new Intent(AdminMainActivity.this, Contact.class);
-                startActivity(intent);
-                break;
-            case R.id.addLost:
-                intent =new Intent(AdminMainActivity.this, LostFound.class);
-                startActivity(intent);
-                break;
-            case R.id.addCareer:
-                intent =new Intent(AdminMainActivity.this, Career.class);
-                startActivity(intent);
-                break;
-            case R.id.addClub:
-                intent =new Intent(AdminMainActivity.this, Club.class);
-                startActivity(intent);
-                break;
-            case R.id.addTimetable:
-                intent =new Intent(AdminMainActivity.this, Timetable.class);
-                startActivity(intent);
-                break;
+        int id = view.getId();
+        if (id == R.id.addEvent) {
+            intent = new Intent(AdminMainActivity.this, Events.class);
+            startActivity(intent);
+        } else if (id == R.id.addFile) {
+            intent = new Intent(AdminMainActivity.this, Files.class);
+            startActivity(intent);
+        } else if (id == R.id.addContact) {
+            intent = new Intent(AdminMainActivity.this, Contact.class);
+            startActivity(intent);
+        } else if (id == R.id.addLost) {
+            intent = new Intent(AdminMainActivity.this, LostFound.class);
+            startActivity(intent);
+        } else if (id == R.id.addCareer) {
+            intent = new Intent(AdminMainActivity.this, Career.class);
+            startActivity(intent);
+        } else if (id == R.id.addClub) {
+            intent = new Intent(AdminMainActivity.this, Club.class);
+            startActivity(intent);
+        } else if (id == R.id.addTimetable) {
+            intent = new Intent(AdminMainActivity.this, Timetable.class);
+            startActivity(intent);
         }
-
     }
 }
