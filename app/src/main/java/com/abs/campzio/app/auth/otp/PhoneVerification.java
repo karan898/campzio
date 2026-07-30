@@ -105,15 +105,11 @@ public class PhoneVerification extends AppCompatActivity {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot snapshot) {
                                                 if (snapshot.exists()){
-                                                    String phone = snapshot.child(otpPhoneNumber).child("id").getValue(String.class);
-                                                    enrollment = snapshot.child(otpPhoneNumber).child("enrollment").getValue(String.class);
-                                                    email = snapshot.child(otpPhoneNumber).child("email").getValue(String.class);
-                                                    name = snapshot.child(otpPhoneNumber).child("name").getValue(String.class);
-                                                    if (otpPhoneNumber.equals(phone)) {
-                                                        sendOtp();
-                                                    }else{
-                                                        Toast.makeText(PhoneVerification.this, "Something went wrong", Toast.LENGTH_SHORT).show();
-                                                    }
+                                                    DataSnapshot userSnapshot = snapshot.getChildren().iterator().next();
+                                                    enrollment = userSnapshot.child("enrollment").getValue(String.class);
+                                                    email = userSnapshot.child("email").getValue(String.class);
+                                                    name = userSnapshot.child("name").getValue(String.class);
+                                                    sendOtp();
                                                 }else {
                                                     // The phone does not exist in the database
                                                     // Show an error message or take other appropriate action

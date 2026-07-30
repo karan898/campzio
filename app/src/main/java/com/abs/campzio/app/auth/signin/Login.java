@@ -118,14 +118,15 @@ public class Login extends AppCompatActivity {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                             if (dataSnapshot.exists()) {
-                                // Extract the user key (phone number) from the snapshot
+                                // Extract user data from the snapshot
                                 DataSnapshot userSnapshot = dataSnapshot.getChildren().iterator().next();
                                 String phoneKey = userSnapshot.getKey();
+                                role = userSnapshot.child("role").getValue(String.class);
 
-                                if (phoneKey == null) {
+                                if (phoneKey == null || role == null) {
                                     loginUserProgressBar.setVisibility(View.GONE);
                                     loginUserBtn.setVisibility(View.VISIBLE);
-                                    Toast.makeText(Login.this, "Error: User record is invalid", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(Login.this, "Error: User record is incomplete", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
 
@@ -133,45 +134,27 @@ public class Login extends AppCompatActivity {
                                     if (task.isSuccessful()) {
                                         sessionManager.setLoggedIn(true);
 
-                                        // Fetch role directly from the identified user node
-                                        userRef.child(phoneKey).addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                                role = snapshot.child("role").getValue(String.class);
-                                                if (role != null) {
-                                                    if (role.equals("admin")) {
-                                                        sessionManager.setAccountRoleAdmin(true);
-                                                        Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                                        Intent intent = new Intent(Login.this, AdminMainActivity.class);
-                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                        startActivity(intent);
-                                                        finish();
-                                                    } else if (role.equals("user")) {
-                                                        sessionManager.setAccountRoleUser(true);
-                                                        Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                                        Intent intent = new Intent(Login.this, UserMainActivity.class);
-                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                        startActivity(intent);
-                                                        finish();
-                                                    } else {
-                                                        loginUserProgressBar.setVisibility(View.GONE);
-                                                        loginUserBtn.setVisibility(View.VISIBLE);
-                                                        mAuth.signOut();
-                                                        sessionManager.setLoggedIn(false);
-                                                        Toast.makeText(Login.this, "The user role is undefined", Toast.LENGTH_LONG).show();
-                                                    }
-                                                }
-                                            }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-                                                loginUserProgressBar.setVisibility(View.GONE);
-                                                loginUserBtn.setVisibility(View.VISIBLE);
-                                                mAuth.signOut();
-                                                sessionManager.setLoggedIn(false);
-                                                Toast.makeText(Login.this, "Database error: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
-                                            }
-                                        });
+                                        if (role.equals("admin")) {
+                                            sessionManager.setAccountRoleAdmin(true);
+                                            Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(Login.this, AdminMainActivity.class);
+                                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            startActivity(intent);
+                                            finish();
+                                        } else if (role.equals("user")) {
+                                            sessionManager.setAccountRoleUser(true);
+                                            Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
+                                            Intent intent = new Intent(Login.this, UserMainActivity.class);
+                                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            startActivity(intent);
+                                            finish();
+                                        } else {
+                                            loginUserProgressBar.setVisibility(View.GONE);
+                                            loginUserBtn.setVisibility(View.VISIBLE);
+                                            mAuth.signOut();
+                                            sessionManager.setLoggedIn(false);
+                                            Toast.makeText(Login.this, "The user role is undefined", Toast.LENGTH_LONG).show();
+                                        }
                                     } else {
                                         loginUserProgressBar.setVisibility(View.GONE);
                                         loginUserBtn.setVisibility(View.VISIBLE);

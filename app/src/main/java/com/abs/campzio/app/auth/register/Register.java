@@ -141,8 +141,8 @@ public class Register extends AppCompatActivity {
                                                 .build();
                                         mAuthCurrentUser.updateProfile(profileUpdates);
 
-                                        // Fetch role and complete registration
-                                        userRef.child(phone).addListenerForSingleValueEvent(new ValueEventListener() {
+                                        // Fetch role and complete registration using enrollment as the key
+                                        userRef.child(enrollment).addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                                 role = dataSnapshot.child("role").getValue(String.class);
