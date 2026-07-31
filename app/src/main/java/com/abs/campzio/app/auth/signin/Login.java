@@ -24,7 +24,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.abs.campzio.app.auth.session.MainActivity;
+import com.abs.campzio.app.auth.otp.AccountActivation;
 import com.abs.campzio.app.auth.session.SessionManager;
+import com.abs.campzio.app.models.User;
+import com.abs.campzio.app.repository.DataRepository;
+import com.abs.campzio.app.utils.UIUtils;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -32,15 +36,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
-import com.google.i18n.phonenumbers.NumberParseException;
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -54,7 +49,6 @@ public class Login extends AppCompatActivity {
 
     TextInputLayout phoneLayout, emailLayout, enrollmentLayout, passwordLayout;
     TextInputEditText editTextPhone, editTextEmail, editTextEnrollment, editTextPassword;
-    TelephonyManager telephonyManager;
     ProgressBar loginLayoutProgressBar;
     LinearLayout loginLayout;
     Button loginUserBtn;
@@ -62,13 +56,10 @@ public class Login extends AppCompatActivity {
 
     TextView signUpTv;
     private final static String TAG = "LoginActivity";
-    String country, phone, email, enrollment, password, role;
-    String phoneNoWithoutCountryCode;
-    FirebaseDatabase database = FirebaseDatabase.getInstance();
-    DatabaseReference userRef = database.getReference().child("Users");
-
-    private static final String PREFS_NAME = "MyPrefsFile";
-    private static final String IS_FIRST_LAUNCH = "IsFirstLaunch";
+    String email, password;
+    
+    SessionManager sessionManager;
+    DataRepository repository;
     FirebaseAuth mAuth = FirebaseAuth.getInstance();
 
     @Override
@@ -76,7 +67,8 @@ public class Login extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        SessionManager sessionManager = new SessionManager(getApplicationContext());
+        sessionManager = new SessionManager(getApplicationContext());
+        repository = DataRepository.getInstance();
 
         loginLayoutProgressBar=findViewById(R.id.loginLayoutProgressBar);
         loginUserProgressBar=findViewById(R.id.loginUserProgressBar);
@@ -92,12 +84,11 @@ public class Login extends AppCompatActivity {
         signUpTv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(Login.this, PhoneVerification.class);
+                Intent intent = new Intent(Login.this, AccountActivation.class);
                 startActivity(intent);
                 finish();
             }
         });
-        telephonyManager = (TelephonyManager) this.getSystemService(Login.this.TELEPHONY_SERVICE);
 
         loginUserBtn=findViewById(R.id.loginBtn);
 
@@ -109,110 +100,67 @@ public class Login extends AppCompatActivity {
         loginUserBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loginUserProgressBar.setVisibility(View.VISIBLE);
-                loginUserBtn.setVisibility(View.GONE);
                 if(validateData()){
-                    //login
-                    Query query = userRef.orderByChild("email").equalTo(email);
-                    query.addListenerForSingleValueEvent(new ValueEventListener() {
+                    UIUtils.toggleProgress(loginUserProgressBar, loginUserBtn, true);
+                    
+                    repository.getUserByEmail(email, new DataRepository.RepositoryCallback<User>() {
                         @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            if (dataSnapshot.exists()) {
-                                // Extract user data from the snapshot
-                                DataSnapshot userSnapshot = dataSnapshot.getChildren().iterator().next();
-                                String phoneKey = userSnapshot.getKey();
-                                role = userSnapshot.child("role").getValue(String.class);
-
-                                if (phoneKey == null || role == null) {
-                                    loginUserProgressBar.setVisibility(View.GONE);
-                                    loginUserBtn.setVisibility(View.VISIBLE);
-                                    Toast.makeText(Login.this, "Error: User record is incomplete", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
-
-                                mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
-                                    if (task.isSuccessful()) {
-                                        sessionManager.setLoggedIn(true);
-
-                                        if (role.equals("admin")) {
-                                            sessionManager.setAccountRoleAdmin(true);
-                                            Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                            Intent intent = new Intent(Login.this, AdminMainActivity.class);
-                                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                            startActivity(intent);
-                                            finish();
-                                        } else if (role.equals("user")) {
-                                            sessionManager.setAccountRoleUser(true);
-                                            Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
-                                            Intent intent = new Intent(Login.this, UserMainActivity.class);
-                                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                            startActivity(intent);
-                                            finish();
-                                        } else {
-                                            loginUserProgressBar.setVisibility(View.GONE);
-                                            loginUserBtn.setVisibility(View.VISIBLE);
-                                            mAuth.signOut();
-                                            sessionManager.setLoggedIn(false);
-                                            Toast.makeText(Login.this, "The user role is undefined", Toast.LENGTH_LONG).show();
-                                        }
+                        public void onSuccess(User user) {
+                            mAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    sessionManager.setLoggedIn(true);
+                                    sessionManager.saveUser(user);
+                                    
+                                    Toast.makeText(Login.this, "Login successful", Toast.LENGTH_SHORT).show();
+                                    
+                                    Intent intent;
+                                    if ("admin".equals(user.getRole())) {
+                                        intent = new Intent(Login.this, AdminMainActivity.class);
                                     } else {
-                                        loginUserProgressBar.setVisibility(View.GONE);
-                                        loginUserBtn.setVisibility(View.VISIBLE);
-                                        try {
-                                            throw Objects.requireNonNull(task.getException());
-                                        } catch (FirebaseAuthInvalidUserException e) {
-                                            Toast.makeText(Login.this, "User not registered", Toast.LENGTH_SHORT).show();
-                                            Intent intent = new Intent(Login.this, PhoneVerification.class);
-                                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                            startActivity(intent);
-                                            finish();
-                                        } catch (FirebaseAuthInvalidCredentialsException e) {
-                                            Toast.makeText(Login.this, "Email or Password doesn't match", Toast.LENGTH_SHORT).show();
-                                        } catch (Exception e) {
-                                            Log.e(TAG, e.getMessage());
-                                            Toast.makeText(Login.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                        }
+                                        intent = new Intent(Login.this, UserMainActivity.class);
                                     }
-                                }).addOnFailureListener(e -> {
-                                    loginUserProgressBar.setVisibility(View.GONE);
-                                    loginUserBtn.setVisibility(View.VISIBLE);
-                                    Toast.makeText(Login.this, "Authentication failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                            } else {
-                                loginUserProgressBar.setVisibility(View.GONE);
-                                loginUserBtn.setVisibility(View.VISIBLE);
-                                Toast.makeText(Login.this, "Record not found", Toast.LENGTH_SHORT).show();
-                            }
+                                    
+                                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                    startActivity(intent);
+                                    finish();
+                                } else {
+                                    UIUtils.toggleProgress(loginUserProgressBar, loginUserBtn, false);
+                                    handleAuthError(task.getException());
+                                }
+                            });
                         }
 
                         @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-                            loginUserProgressBar.setVisibility(View.GONE);
-                            loginUserBtn.setVisibility(View.VISIBLE);
-                            Toast.makeText(Login.this, "Database error", Toast.LENGTH_SHORT).show();
+                        public void onError(String message) {
+                            UIUtils.toggleProgress(loginUserProgressBar, loginUserBtn, false);
+                            Toast.makeText(Login.this, message, Toast.LENGTH_SHORT).show();
                         }
                     });
-
-                } else {
-                    loginUserProgressBar.setVisibility(View.GONE);
-                    loginUserBtn.setVisibility(View.VISIBLE);
-                    Toast.makeText(Login.this, "something went wrong", Toast.LENGTH_SHORT).show();
                 }
             }
         });
 
         editTextEmail.addTextChangedListener(emailTextWatcher);
-
         editTextPassword.addTextChangedListener(passwordTextWatcher);
     }
 
+    private void handleAuthError(Exception e) {
+        if (e instanceof FirebaseAuthInvalidUserException) {
+            Toast.makeText(Login.this, "User not registered", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Login.this, PhoneVerification.class);
+            startActivity(intent);
+            finish();
+        } else if (e instanceof FirebaseAuthInvalidCredentialsException) {
+            Toast.makeText(Login.this, "Email or Password doesn't match", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(Login.this, e != null ? e.getMessage() : "Authentication failed", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     private boolean validateData() {
-        if(validateEmail() && validatePassword())
-            return true;
-        else return false;
-
+        return validateEmail() && validatePassword();
     }
+
 
 
     private TextWatcher emailTextWatcher = new TextWatcher() {

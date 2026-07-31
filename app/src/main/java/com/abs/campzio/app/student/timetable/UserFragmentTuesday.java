@@ -17,17 +17,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.abs.campzio.app.R;
+import com.abs.campzio.app.auth.session.SessionManager;
+import com.abs.campzio.app.models.User;
+import com.abs.campzio.app.repository.DataRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
-import com.google.firebase.database.ValueEventListener;
-import com.google.i18n.phonenumbers.NumberParseException;
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,18 +33,14 @@ public class UserFragmentTuesday extends Fragment {
     View view;
     private RecyclerView tuesdayLecture;
     private List<UserLecture> lectureList;
-    private DatabaseReference dbRef,userRef, reference;
     private UserLectureAdapter userLectureAdapter;
 
-    private String phone;
-    private String course;
-    private String semester;
-    private String section;
-
+    SessionManager sessionManager;
+    DataRepository repository;
     FirebaseAuth mAuth = FirebaseAuth.getInstance();
     FirebaseUser currentUser=mAuth.getCurrentUser();
-    public UserFragmentTuesday() {
 
+    public UserFragmentTuesday() {
     }
 
     @Nullable
@@ -60,81 +50,42 @@ public class UserFragmentTuesday extends Fragment {
         tuesdayLecture=view.findViewById(R.id.user_tuesdayRecyclerView);
         lectureShimmer=view.findViewById(R.id.lectureShimmerTuesday);
         lecture=view.findViewById(R.id.lectureTuesday);
-        reference= FirebaseDatabase.getInstance().getReference().child("Timetable");
-        tuesdayLecture();
+        
+        sessionManager = new SessionManager(getContext());
+        repository = DataRepository.getInstance();
+        
+        fetchTuesdayLecture();
         return view;
     }
 
-    private void tuesdayLecture() {
-        if (currentUser!=null) {
-            phone = getUserPhoneNumber();
-
-            userRef=FirebaseDatabase.getInstance().getReference().child("Users");
-            Query query = userRef.orderByChild("id").equalTo(phone);
-            query.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        DataSnapshot userSnapshot = snapshot.getChildren().iterator().next();
-                        course = userSnapshot.child("course").getValue(String.class);
-                        semester = userSnapshot.child("semester").getValue(String.class);
-                        section = userSnapshot.child("section").getValue(String.class);
-                        reference = FirebaseDatabase.getInstance().getReference().child("Timetable").child("Tuesday");
-                        dbRef=reference.child(course).child(semester).child(section);
-                        dbRef.addValueEventListener(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                lectureList = new ArrayList<>();
-                                if(!dataSnapshot.exists()){
-                                    Toast.makeText(getContext(), "No Data", Toast.LENGTH_SHORT).show();
-                                }else{
-                                    for(DataSnapshot snapshot: dataSnapshot.getChildren()){
-                                        UserLecture data = snapshot.getValue(UserLecture.class);
-                                        lectureList.add(data);
-                                    }
-                                    tuesdayLecture.setHasFixedSize(true);
-                                    tuesdayLecture.setLayoutManager((new LinearLayoutManager(getContext())));
-                                    userLectureAdapter=new UserLectureAdapter(getContext(),lectureList);
-                                    tuesdayLecture.setAdapter(userLectureAdapter);
-                                    lectureShimmer.setVisibility(View.GONE);
-                                    lecture.setVisibility(View.VISIBLE);
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                                Toast.makeText(getContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }else {
-                        Toast.makeText(getContext(), "Record not found", Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Toast.makeText(getContext(), "Database error", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }else {
-            mAuth.signOut();
-            Toast.makeText(getContext(), "Something went wrong", Toast.LENGTH_SHORT).show();
+    private void fetchTuesdayLecture() {
+        User user = sessionManager.getUser();
+        if (user == null || currentUser == null) {
+            Toast.makeText(getContext(), "Session error. Please login again.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-    }
-    private String getUserPhoneNumber() {
-        TelephonyManager telephonyManager = (TelephonyManager) getActivity().getSystemService(getActivity().TELEPHONY_SERVICE);
-        String phoneNumberWithCountryCode = currentUser.getPhoneNumber();
-        String phoneNumberWithoutCountryCode = null;
-        String defaultCountryIso = telephonyManager.getNetworkCountryIso(); // replace with your default country code
-        try {
-            PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
-            Phonenumber.PhoneNumber phoneNumber = phoneUtil.parse(phoneNumberWithCountryCode, defaultCountryIso);
-            phoneNumberWithoutCountryCode = String.valueOf(phoneNumber.getNationalNumber());
-        } catch (NumberParseException e) {
-            Log.e(TAG, "Error parsing phone number: " + e.getMessage());
-        }
-        return phoneNumberWithoutCountryCode;
+        repository.getTimetable("Tuesday", user.getCourse(), user.getSemester(), user.getSection(), new DataRepository.RepositoryCallback<List<UserLecture>>() {
+            @Override
+            public void onSuccess(List<UserLecture> result) {
+                lectureList = result;
+                if (lectureList.isEmpty()) {
+                    Toast.makeText(getContext(), "No classes scheduled for Tuesday", Toast.LENGTH_SHORT).show();
+                } else {
+                    tuesdayLecture.setHasFixedSize(true);
+                    tuesdayLecture.setLayoutManager(new LinearLayoutManager(getContext()));
+                    userLectureAdapter = new UserLectureAdapter(getContext(), lectureList);
+                    tuesdayLecture.setAdapter(userLectureAdapter);
+                    lectureShimmer.setVisibility(View.GONE);
+                    lecture.setVisibility(View.VISIBLE);
+                }
+            }
+
+            @Override
+            public void onError(String message) {
+                Toast.makeText(getContext(), "Error: " + message, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
 

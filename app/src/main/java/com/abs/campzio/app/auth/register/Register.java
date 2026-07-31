@@ -16,6 +16,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.abs.campzio.app.auth.session.SessionManager;
+import com.abs.campzio.app.models.User;
+import com.abs.campzio.app.repository.DataRepository;
+import com.abs.campzio.app.utils.UIUtils;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
@@ -30,11 +33,6 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import com.abs.campzio.app.admin.AdminMainActivity;
 import com.abs.campzio.app.R;
@@ -51,60 +49,33 @@ public class Register extends AppCompatActivity {
     String phone, email,name, enrollment,password,confirmPassword,role;
     private final static String TAG = "Register Activity";
 
-    String otpCountryCode;
-
-    private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
-
     ProgressBar registerProgressBar;
-    String verificationID,code;
 
     FirebaseAuth mAuth = FirebaseAuth.getInstance();
-
-    PhoneAuthProvider.ForceResendingToken mResendToken;
+    SessionManager sessionManager;
+    DataRepository repository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
-        SessionManager sessionManager = new SessionManager(getApplicationContext());
+        
+        sessionManager = new SessionManager(getApplicationContext());
+        repository = DataRepository.getInstance();
+        
         registerProgressBar=findViewById(R.id.registerProgressBar);
         enrollmentTv=findViewById(R.id.enrollmentTv);
         emailTv=findViewById(R.id.emailTv);
-
-       /* countryLayout=findViewById(R.id.registerCountryLayout);
-        phoneLayout=findViewById(R.id.registerPhoneLayout);
-        emailLayout=findViewById(R.id.registerEmailLayout);
-        enrollmentLayout=findViewById(R.id.registerEnrollmentLayout);
-
-        editTextCountry=findViewById(R.id.registerCountry);
-        editTextPhone=findViewById(R.id.registerPhone);
-        editTextEmail=findViewById(R.id.registerEmail);
-        editTextEnrollment=findViewById(R.id.registerEnrollment);*/
 
         passwordLayout=findViewById(R.id.registerPasswordLayout);
         confirmPasswordLayout=findViewById(R.id.registerConfirmPasswordLayout);
         editTextPassword=findViewById(R.id.registerPassword);
         editTextConfirmPassword=findViewById(R.id.registerConfirmPassword);
 
-        /*editTextCountry.addTextChangedListener(countryTextWatcher);
-
-        editTextPhone.addTextChangedListener(phoneTextWatcher);
-
-        editTextEmail.addTextChangedListener(emailTextWatcher);
-
-        editTextEnrollment.addTextChangedListener(enrollmentTextWatcher);*/
-
         editTextPassword.addTextChangedListener(passwordTextWatcher);
-
         editTextConfirmPassword.addTextChangedListener(confirmPasswordTextWatcher);
 
-
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference userRef = database.getReference().child("Users");
-
         name=getIntent().getStringExtra("name");
-        code = getIntent().getStringExtra("code");
-        verificationID = getIntent().getStringExtra("verificationID");
         phone = getIntent().getStringExtra("phone");
         email=getIntent().getStringExtra("email");
         enrollment=getIntent().getStringExtra("enrollment");
@@ -117,117 +88,74 @@ public class Register extends AppCompatActivity {
         registerUserBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                registerProgressBar.setVisibility(View.VISIBLE);
-                registerUserBtn.setVisibility(View.GONE);
                 if(validateData()){
-                    //register
-                    /*if enrollment & email exists in firebase db
-                        Create a user
-                            if the created user's has admin role in db
-                              Signin user
-                              Intent to admin main activity
-                            else signin user
-                              intent to user main activity
-                     else toast "Record not found" */
-                        mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                            @Override
-                            public void onComplete(@NonNull Task<AuthResult> task) {
-                                if (task.isSuccessful()) {
-                                    FirebaseUser mAuthCurrentUser = mAuth.getCurrentUser();
-                                    if (mAuthCurrentUser != null) {
-                                        // Update display name
-                                        UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                                .setDisplayName(name)
-                                                .build();
-                                        mAuthCurrentUser.updateProfile(profileUpdates);
-
-                                        // Fetch role and complete registration using enrollment as the key
-                                        userRef.child(enrollment).addListenerForSingleValueEvent(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                role = dataSnapshot.child("role").getValue(String.class);
-                                                if (role != null) {
-                                                    sessionManager.setLoggedIn(true);
-                                                    if (role.equals("admin")) {
-                                                        sessionManager.setAccountRoleAdmin(true);
-                                                        if (!mAuthCurrentUser.isEmailVerified()) {
-                                                            mAuthCurrentUser.sendEmailVerification();
-                                                            Toast.makeText(Register.this, "Admin Registered Successfully. Verification email sent.", Toast.LENGTH_LONG).show();
-                                                        }
-                                                        Intent intent = new Intent(Register.this, AdminMainActivity.class);
-                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                        startActivity(intent);
-                                                        finish();
-                                                    } else if (role.equals("user")) {
-                                                        sessionManager.setAccountRoleUser(true);
-                                                        if (!mAuthCurrentUser.isEmailVerified()) {
-                                                            mAuthCurrentUser.sendEmailVerification();
-                                                            Toast.makeText(Register.this, "Student Registered Successfully. Verification email sent.", Toast.LENGTH_LONG).show();
-                                                        }
-                                                        Intent intent = new Intent(Register.this, UserMainActivity.class);
-                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                        startActivity(intent);
-                                                        finish();
-                                                    } else {
-                                                        mAuth.signOut();
-                                                        sessionManager.clearSession();
-                                                        Toast.makeText(Register.this, "Unable to identify role", Toast.LENGTH_LONG).show();
-                                                        Intent intent = new Intent(Register.this, Login.class);
-                                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                        startActivity(intent);
-                                                        finish();
-                                                    }
-                                                }
+                    UIUtils.toggleProgress(registerProgressBar, registerUserBtn, true);
+                    
+                    mAuth.createUserWithEmailAndPassword(email, password).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                FirebaseUser firebaseUser = mAuth.getCurrentUser();
+                                if (firebaseUser != null) {
+                                    // Update profile
+                                    UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
+                                            .setDisplayName(name)
+                                            .build();
+                                    firebaseUser.updateProfile(profileUpdates);
+                                    
+                                    // Linking phone credential is often complex and might need re-auth, 
+                                    // but for now let's just fetch the user from our DB and set the session.
+                                    repository.getUserByPhone(phone, new DataRepository.RepositoryCallback<User>() {
+                                        @Override
+                                        public void onSuccess(User user) {
+                                            sessionManager.setLoggedIn(true);
+                                            sessionManager.saveUser(user);
+                                            
+                                            if (!firebaseUser.isEmailVerified()) {
+                                                firebaseUser.sendEmailVerification();
                                             }
-
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-                                                registerProgressBar.setVisibility(View.GONE);
-                                                registerUserBtn.setVisibility(View.VISIBLE);
-                                                Toast.makeText(Register.this, "Database error: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+                                            
+                                            Toast.makeText(Register.this, "Registration successful!", Toast.LENGTH_SHORT).show();
+                                            
+                                            Intent intent;
+                                            if ("admin".equals(user.getRole())) {
+                                                intent = new Intent(Register.this, AdminMainActivity.class);
+                                            } else {
+                                                intent = new Intent(Register.this, UserMainActivity.class);
                                             }
-                                        });
-                                    }
-                                } else {
-                                    registerProgressBar.setVisibility(View.GONE);
-                                    registerUserBtn.setVisibility(View.VISIBLE);
-                                    try {
-                                        throw task.getException();
-                                    } catch (FirebaseAuthUserCollisionException e) {
-                                        Toast.makeText(Register.this, "User already registered", Toast.LENGTH_SHORT).show();
-                                        Intent intent = new Intent(Register.this, Login.class);
-                                        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                        startActivity(intent);
-                                        finish();
-                                    } catch (Exception e) {
-                                        Log.e(TAG, e.getMessage());
-                                        Toast.makeText(Register.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
+                                            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            startActivity(intent);
+                                            finish();
+                                        }
+
+                                        @Override
+                                        public void onError(String message) {
+                                            UIUtils.toggleProgress(registerProgressBar, registerUserBtn, false);
+                                            Toast.makeText(Register.this, "Error fetching user data: " + message, Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
                                 }
+                            } else {
+                                UIUtils.toggleProgress(registerProgressBar, registerUserBtn, false);
+                                handleRegistrationError(task.getException());
                             }
-                        }).addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                Toast.makeText(Register.this, "Unable to create user", Toast.LENGTH_SHORT).show();
-                                Intent intent = new Intent(Register.this, Login.class);
-                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                                finish();
-                            }
-                        });
-
-                }else {
-                    registerProgressBar.setVisibility(View.GONE);
-                    registerUserBtn.setVisibility(View.VISIBLE);
-                    Toast.makeText(Register.this, "Something went wrong", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(Register.this, Login.class);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_CLEAR_TASK|Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(intent);
-                    finish();
+                        }
+                    });
                 }
             }
         });
     }
+
+    private void handleRegistrationError(Exception e) {
+        if (e instanceof FirebaseAuthUserCollisionException) {
+            Toast.makeText(Register.this, "User already registered", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(Register.this, Login.class));
+            finish();
+        } else {
+            Toast.makeText(Register.this, e != null ? e.getMessage() : "Registration failed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
 
 

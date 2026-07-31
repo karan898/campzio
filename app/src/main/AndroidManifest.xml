@@ -45,10 +45,7 @@
             android:name=".auth.signin.Login"
             android:exported="true" />
         <activity
-            android:name=".auth.otp.PhoneVerification"
-            android:exported="false" />
-        <activity
-            android:name=".auth.otp.EnterOtp"
+            android:name=".auth.otp.AccountActivation"
             android:exported="false" />
         <activity
             android:name=".auth.register.Register"
