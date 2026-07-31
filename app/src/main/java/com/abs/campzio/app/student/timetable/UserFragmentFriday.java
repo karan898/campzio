@@ -78,10 +78,11 @@ public class UserFragmentFriday extends Fragment {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     if (snapshot.exists()) {
-                        course = snapshot.child(phone).child("course").getValue(String.class);
-                        semester = snapshot.child(phone).child("semester").getValue(String.class);
-                        section = snapshot.child(phone).child("section").getValue(String.class);
-                        reference=FirebaseDatabase.getInstance().getReference().child("Timetable").child("Friday");
+                        DataSnapshot userSnapshot = snapshot.getChildren().iterator().next();
+                        course = userSnapshot.child("course").getValue(String.class);
+                        semester = userSnapshot.child("semester").getValue(String.class);
+                        section = userSnapshot.child("section").getValue(String.class);
+                        reference = FirebaseDatabase.getInstance().getReference().child("Timetable").child("Friday");
                         dbRef=reference.child(course).child(semester).child(section);
                         dbRef.addValueEventListener(new ValueEventListener() {
                             @Override

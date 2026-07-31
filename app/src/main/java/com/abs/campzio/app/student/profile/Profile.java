@@ -98,61 +98,44 @@ public class Profile extends Fragment {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     if (snapshot.exists()){
-                        phoneQuery=phoneNumberWithoutCountryCode;
-                        course=snapshot.child(phoneNumberWithoutCountryCode).child("course").getValue(String.class);
-                        semester=snapshot.child(phoneNumberWithoutCountryCode).child("semester").getValue(String.class);
-                        enrollment=snapshot.child(phoneNumberWithoutCountryCode).child("enrollment").getValue(String.class);
-                        userRef.addValueEventListener(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(DataSnapshot dataSnapshot) {
+                        DataSnapshot userSnapshot = snapshot.getChildren().iterator().next();
+                        phoneQuery = userSnapshot.getKey(); // This is the enrollment ID
+                        course = userSnapshot.child("course").getValue(String.class);
+                        semester = userSnapshot.child("semester").getValue(String.class);
+                        enrollment = userSnapshot.child("enrollment").getValue(String.class);
+                        role = userSnapshot.child("role").getValue(String.class);
 
-                                role = dataSnapshot.child(phoneQuery).child("role").getValue(String.class);
-                                if (role != null) {
-                                    if (role.equals("admin")) {
-                                        // User is an admin
-                                        // Do something
-                                        materialCardViewShimmer.setVisibility(View.GONE);
-                                        materialCardView.setVisibility(View.VISIBLE);
-                                        dotProfile.setVisibility(View.VISIBLE);
-                                        userSemester.setVisibility(View.VISIBLE);
-                                        userSemester.setText("Admin");
-                                        userName.setText(name);
-                                        userEmail.setText(email);
-                                        userPhone.setText(phone);
+                        if (role != null) {
+                            if (role.equals("admin")) {
+                                // User is an admin
+                                materialCardViewShimmer.setVisibility(View.GONE);
+                                materialCardView.setVisibility(View.VISIBLE);
+                                dotProfile.setVisibility(View.VISIBLE);
+                                userSemester.setVisibility(View.VISIBLE);
+                                userSemester.setText("Admin");
+                                userName.setText(name);
+                                userEmail.setText(email);
+                                userPhone.setText(phone);
 
-                                    } else if (role.equals("user")) {
-                                        // User is a regular user
-                                        // Do something else
-                                        course=snapshot.child(phoneNumberWithoutCountryCode).child("course").getValue(String.class);
-                                        semester=snapshot.child(phoneNumberWithoutCountryCode).child("semester").getValue(String.class);
-                                        enrollment=snapshot.child(phoneNumberWithoutCountryCode).child("enrollment").getValue(String.class);
-                                        materialCardViewShimmer.setVisibility(View.GONE);
-                                        materialCardView.setVisibility(View.VISIBLE);
-                                        userCourse.setVisibility(View.VISIBLE);
-                                        userDot.setVisibility(View.VISIBLE);
-                                        userSemester.setVisibility(View.VISIBLE);
-                                        enrollmentID.setVisibility(View.VISIBLE);
-                                        userName.setText(name);
-                                        userEnrollment.setText(enrollment);
-                                        userEmail.setText(email);
-                                        userPhone.setText(phone);
-                                        userCourse.setText(course);
-                                        userSemester.setText(semester);
-                                    } else {
-                                        // Role is not recognized
-                                        // Handle the error appropriately
-                                        Toast.makeText(getContext(), "User role is undefined", Toast.LENGTH_LONG).show();
-                                    }
-                                }
+                            } else if (role.equals("user")) {
+                                // User is a regular user
+                                materialCardViewShimmer.setVisibility(View.GONE);
+                                materialCardView.setVisibility(View.VISIBLE);
+                                userCourse.setVisibility(View.VISIBLE);
+                                userDot.setVisibility(View.VISIBLE);
+                                userSemester.setVisibility(View.VISIBLE);
+                                enrollmentID.setVisibility(View.VISIBLE);
+                                userName.setText(name);
+                                userEnrollment.setText(enrollment);
+                                userEmail.setText(email);
+                                userPhone.setText(phone);
+                                userCourse.setText(course);
+                                userSemester.setText(semester);
+                            } else {
+                                Toast.makeText(getContext(), "User role is undefined", Toast.LENGTH_LONG).show();
                             }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) {
-                                // Handle the error appropriately
-                                Toast.makeText(getContext(), "Something went wrong", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }else {
+                        }
+                    } else {
                         Toast.makeText(getContext(), "Error fetching profile details", Toast.LENGTH_SHORT).show();
                     }
                 }
