@@ -1,6 +1,6 @@
-# campzio - A College Community App
+# Campzio - A Campus Community App
 
-The project objective of the campzio- College Community App is to create a centralized platform that facilitates seamless communication and enhances engagement within the college community. 
+The project objective of the Campzio Campus Community App is to create a centralized platform that...cilitates seamless communication and enhances engagement within the college community. 
 
 ### App Screenshots
 - ### **User**

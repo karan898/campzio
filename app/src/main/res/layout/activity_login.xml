@@ -41,31 +41,24 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
+            android:paddingBottom="24dp"
             android:visibility="visible"
             app:layout_constraintBottom_toTopOf="@+id/materialCardView2">
 
             <ImageView
-                android:id="@+id/imageView2"
+                android:id="@+id/loginLogo"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:srcCompat="@drawable/campzio_logo_login" />
-
-            <ImageView
-                android:id="@+id/imageView3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="8dp"
-                android:paddingBottom="8dp"
-                app:srcCompat="@drawable/campzio_" />
+                android:layout_height="60dp"
+                android:paddingHorizontal="48dp"
+                app:srcCompat="@drawable/campzio_logo_word" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="16dp"
-                android:paddingBottom="36dp"
+                android:layout_marginTop="8dp"
                 android:text="Your campus life hassle-free"
                 android:textAppearance="@style/TextAppearance.Material3.ActionBar.Subtitle"
-                android:textSize="12sp"></TextView>
+                android:textSize="14sp" />
 
         </LinearLayout>
 
